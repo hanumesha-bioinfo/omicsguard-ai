@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Generated audit history
+results/audit_history.json
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+
+# Downloaded and regenerated datasets
+data/raw/*.gz
+data/processed/*.csv
+
+# Generated audit outputs
+results/*.csv
+results/*.json
+results/*.png
+results/*.html
+
+# Backup files
+*.backup
+*.before_history_page
+*.broken_backup
+*.bak
+*~
+
+# Python cache directories
+__pycache__/
+
+# All generated analysis results
+results/
