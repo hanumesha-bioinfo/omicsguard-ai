@@ -41,8 +41,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-apply_dashboard_style()
-
 st.markdown(
     """
     <style>
@@ -430,10 +428,117 @@ st.markdown(
         transition:all .15s ease;
     }
 
-    </style>
+    
+/* Reference-style horizontal navigation */
+div[data-testid="stRadio"] div[role="radiogroup"] {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 9px;
+    width: 100%;
+}
+
+div[data-testid="stRadio"] div[role="radiogroup"] label {
+    background: #ffffff;
+    border: 1px solid #dce8ed;
+    border-radius: 12px;
+    padding: 9px 14px;
+    margin: 0;
+    box-shadow: 0 4px 12px rgba(23,36,58,.04);
+}
+
+div[data-testid="stRadio"] div[role="radiogroup"] label:hover {
+    background: #eafaf8;
+    border-color: #12a89d;
+}
+
+div[data-testid="stRadio"] div[role="radiogroup"] p {
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.upload-card [data-testid="stFileUploader"] {
+    background: #f7ffff;
+    border: 1px dashed #9bd9d5;
+    border-radius: 12px;
+    padding: 8px;
+}
+
+@media (max-width: 850px) {
+    div[data-testid="stRadio"] div[role="radiogroup"] {
+        flex-wrap: wrap;
+    }
+}
+
+
+    /* Final OmicsGuard visual theme overrides */
+    :root {
+        --ink: #102b49;
+        --muted: #607991;
+        --teal: #00a99d;
+        --teal-dark: #087e79;
+        --line: #dcebf2;
+        --surface: #ffffff;
+        --canvas: #f1f7fb;
+    }
+
+    .stApp {
+        background:
+          radial-gradient(ellipse at 5% 5%, #e4f7f8 0%, transparent 30%),
+          linear-gradient(135deg, #f5f9fd, #edf5fa) !important;
+    }
+
+    [data-testid="stHeader"] {background:transparent !important;}
+    [data-testid="stSidebar"] {display:none !important;}
+
+    .hero {
+        background:
+          radial-gradient(circle at 78% 25%, #00d7c75c, transparent 27%),
+          linear-gradient(112deg, #062d48 0%, #07536a 57%, #009b91 115%) !important;
+        border-radius:25px !important;
+        min-height:220px !important;
+        box-shadow:0 13px 30px #075b7730 !important;
+    }
+
+    .hero:after {
+        content:"🧬" !important;
+        right:9% !important;
+        top:22px !important;
+        font-size:130px !important;
+        opacity:.34 !important;
+    }
+
+    .block-container {
+        max-width:1550px !important;
+        padding-top:1.1rem !important;
+    }
+
+    .metric-card {
+        border-radius:19px !important;
+        box-shadow:0 7px 20px #183b5b0c !important;
+    }
+
+    .stButton>button[kind="primary"] {
+        background:linear-gradient(100deg,#00aaa0,#087e79) !important;
+        color:white !important;
+        border:0 !important;
+        box-shadow:0 5px 14px #087e7930 !important;
+    }
+
+    .footer {
+        color:#58718c !important;
+        border-color:#d5e7ed !important;
+    }
+
+</style>
     """,
     unsafe_allow_html=True,
 )
+
+# Apply the reference dashboard theme after the legacy CSS.
+# This gives dashboard_ui.py priority for shared visual classes.
+apply_dashboard_style()
 
 
 # ==================================================
@@ -526,511 +631,211 @@ except Exception as error:
     st.stop()
 
 
-# ==================================================
-# SIDEBAR
-# ==================================================
-
-with st.sidebar:
-    st.markdown(
-        """
-        <div class="brand-lockup">
-            <div class="brand-mark">🧬</div>
-            <div>
-                <div class="brand-name">OmicsGuard AI</div>
-                <div class="brand-sub">Research data auditor</div>
-            </div>
-        </div>
-        <div class="sidebar-label">Workspace</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    page = st.radio(
-        "Navigate",
-        [
-            "Overview",
-            "Integrity Audit",
-            "Anomaly Analysis",
-            "Fault-Injection Benchmark",
-            "ML Leakage Audit",
-            "Audit History",
-        ],
-        key="page",
-        label_visibility="collapsed",
-    )
-
-    st.markdown(
-        f"""
-        <div class="sidebar-dataset">
-            <div class="sidebar-label">Active dataset</div>
-            <div class="value">GSE10072</div>
-            <div class="small">NCBI Gene Expression Omnibus</div>
-            <hr style="border-color:rgba(255,255,255,.12);margin:12px 0">
-            <div class="small">SAMPLES</div>
-            <div class="value">{expression.shape[0]:,}</div>
-            <div class="small">PROBE FEATURES</div>
-            <div class="value">{expression.shape[1]:,}</div>
-            <div class="small">METADATA FIELDS</div>
-            <div class="value" style="margin-bottom:0">{metadata.shape[1]:,}</div>
-        </div>
-        <div style="color:#7f93aa;font-size:.68rem;margin-top:1.2rem;line-height:1.5">
-            SCIENCE FAIR EDITION · 2026<br>
-            Local dataset mode
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
 
 # ==================================================
-# GLOBAL TOP STRIP
+# OMICSGUARD HEADER + NAVIGATION + DATASET UPLOAD
 # ==================================================
+
+# Keep the original bundled dataset available for reset.
+bundled_expression = expression
+bundled_metadata = metadata
+
+# Initialize the active dataset only once per session.
+if "omicsguard_active_expression" not in st.session_state:
+    st.session_state["omicsguard_active_expression"] = bundled_expression
+    st.session_state["omicsguard_active_metadata"] = bundled_metadata
+    st.session_state["omicsguard_active_dataset_name"] = "GSE10072"
+
+# Reference-style brand header.
+render_dashboard_header()
+
+# Horizontal navigation.
+pages = [
+    "Overview",
+    "Integrity Audit",
+    "Anomaly Analysis",
+    "Fault-Injection Benchmark",
+    "ML Leakage Audit",
+    "Audit History",
+]
+
+page = st.radio(
+    "Main navigation",
+    pages,
+    key="page",
+    horizontal=True,
+    label_visibility="collapsed",
+)
+
+# Upload toolbar from dashboard_ui.py.
+expression_file, metadata_file, verify_upload = render_upload_toolbar()
+
+st.caption(
+    "Expression CSV: one row per sample, with sample IDs in the first "
+    "column or a column named sample_id. Metadata CSV must contain "
+    "a sample_id column."
+)
+
+# Verify and activate an uploaded dataset.
+if verify_upload:
+    if expression_file is None or metadata_file is None:
+        st.error(
+            "Please upload both the expression CSV and metadata CSV."
+        )
+    else:
+        try:
+            # Read expression data.
+            uploaded_expression = pd.read_csv(expression_file)
+
+            if uploaded_expression.empty or uploaded_expression.shape[1] < 2:
+                raise ValueError(
+                    "Expression CSV must contain sample IDs and at least "
+                    "one feature column."
+                )
+
+            if "sample_id" in uploaded_expression.columns:
+                uploaded_expression = uploaded_expression.set_index("sample_id")
+            else:
+                # Standard CSV export: first column contains sample IDs.
+                uploaded_expression = uploaded_expression.set_index(
+                    uploaded_expression.columns[0]
+                )
+
+            if uploaded_expression.index.isna().any():
+                raise ValueError(
+                    "Expression CSV contains missing sample identifiers."
+                )
+
+            uploaded_expression.index = (
+                uploaded_expression.index.astype(str).str.strip()
+            )
+            uploaded_expression.index.name = "sample_id"
+            uploaded_expression.columns = (
+                uploaded_expression.columns.astype(str)
+            )
+
+            # Convert feature columns to numeric values.
+            uploaded_expression = uploaded_expression.apply(
+                pd.to_numeric,
+                errors="coerce",
+            )
+
+            if not uploaded_expression.notna().any().any():
+                raise ValueError(
+                    "No numeric expression values were detected. "
+                    "Check the CSV orientation and feature columns."
+                )
+
+            # Read metadata.
+            uploaded_metadata = pd.read_csv(metadata_file)
+
+            # Support metadata CSVs exported with an unnamed index column.
+            if (
+                "sample_id" not in uploaded_metadata.columns
+                and len(uploaded_metadata.columns) > 0
+                and str(uploaded_metadata.columns[0]).startswith("Unnamed:")
+            ):
+                uploaded_metadata = uploaded_metadata.rename(
+                    columns={uploaded_metadata.columns[0]: "sample_id"}
+                )
+
+            if "sample_id" not in uploaded_metadata.columns:
+                raise ValueError(
+                    "Metadata CSV must contain a column named sample_id."
+                )
+
+            if uploaded_metadata["sample_id"].isna().any():
+                raise ValueError(
+                    "Metadata contains missing sample IDs."
+                )
+
+            uploaded_metadata["sample_id"] = (
+                uploaded_metadata["sample_id"].astype(str).str.strip()
+            )
+
+            if (uploaded_metadata["sample_id"] == "").any():
+                raise ValueError(
+                    "Metadata contains blank sample IDs."
+                )
+
+            # Compare IDs. Mismatches are reported, not silently removed.
+            expression_ids = set(uploaded_expression.index)
+            metadata_ids = set(uploaded_metadata["sample_id"])
+
+            matched_ids = expression_ids & metadata_ids
+            expression_only = expression_ids - metadata_ids
+            metadata_only = metadata_ids - expression_ids
+
+            # Activate the uploaded data for all analysis modules.
+            st.session_state["omicsguard_active_expression"] = (
+                uploaded_expression
+            )
+            st.session_state["omicsguard_active_metadata"] = (
+                uploaded_metadata
+            )
+            st.session_state["omicsguard_active_dataset_name"] = (
+                Path(expression_file.name).stem
+            )
+
+            st.success(
+                f"Dataset loaded: {uploaded_expression.shape[0]:,} samples "
+                f"and {uploaded_expression.shape[1]:,} features."
+            )
+
+            st.info(
+                f"Sample ID comparison: {len(matched_ids):,} matched, "
+                f"{len(expression_only):,} expression-only, "
+                f"{len(metadata_only):,} metadata-only."
+            )
+
+            if expression_only or metadata_only:
+                st.warning(
+                    "Sample IDs do not fully match. The dataset is loaded "
+                    "so the Integrity Audit can report the mismatch."
+                )
+            else:
+                st.success(
+                    "Expression and metadata sample IDs match."
+                )
+
+        except Exception as error:
+            st.error(f"Dataset verification failed: {error}")
+
+# Restore the original bundled dataset.
+if st.button(
+    "↩ Restore bundled GSE10072 dataset",
+    key="restore_bundled_dataset",
+):
+    st.session_state["omicsguard_active_expression"] = bundled_expression
+    st.session_state["omicsguard_active_metadata"] = bundled_metadata
+    st.session_state["omicsguard_active_dataset_name"] = "GSE10072"
+    st.success("Bundled GSE10072 dataset restored.")
+
+# Use the active dataset throughout the existing application.
+expression = st.session_state["omicsguard_active_expression"]
+metadata = st.session_state["omicsguard_active_metadata"]
+dataset_label = st.session_state["omicsguard_active_dataset_name"]
 
 st.markdown(
-    """
-    <div style="display:flex;justify-content:space-between;align-items:center;
-                gap:12px;margin-bottom:1rem;flex-wrap:wrap">
-        <div style="color:#718096;font-size:.76rem;font-weight:600;
-                    letter-spacing:.07em;text-transform:uppercase">
-            BIOINFORMATICS · DATA QUALITY · MODEL RELIABILITY
-        </div>
-        <div style="background:#e7f7f4;color:#087e79;padding:6px 11px;
-                    border-radius:999px;font-size:.7rem;font-weight:800">
-            ● LOCAL ANALYSIS WORKSPACE
-        </div>
+    f"""
+    <div style="margin:4px 0 18px;color:#718096;font-size:.78rem">
+        Active dataset:
+        <strong style="color:#087e79">{dataset_label}</strong>
+        &nbsp;·&nbsp; {expression.shape[0]:,} samples
+        &nbsp;·&nbsp; {expression.shape[1]:,} features
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-
+# OMICSGUARD_UPLOAD_TOOLBAR_ACTIVE
 
 # ==================================================
 # OVERVIEW
 # ==================================================
 
 if page == "Overview":
-
-    # ----------------------------------------------
-    # METADATA SUMMARY
-    # ----------------------------------------------
-
-    tissue_column = "source_name_ch1"
-    smoking_column = "characteristic_Cigarette Smoking Status"
-
-    tissue_counts = (
-        metadata[tissue_column].fillna("Unknown").value_counts()
-        if tissue_column in metadata.columns
-        else pd.Series(dtype=int)
-    )
-
-    smoking_counts = (
-        metadata[smoking_column].fillna("Unknown").value_counts()
-        if smoking_column in metadata.columns
-        else pd.Series(dtype=int)
-    )
-
-    total_samples = len(expression)
-    total_features = expression.shape[1]
-    missing_values = int(expression.isna().sum().sum())
-
-    unique_sample_ids = (
-        metadata["sample_id"].nunique()
-        if "sample_id" in metadata.columns
-        else 0
-    )
-
-    tissue_labelled = (
-        int(metadata[tissue_column].notna().sum())
-        if tissue_column in metadata.columns
-        else 0
-    )
-
-    # ----------------------------------------------
-    # HERO
-    # ----------------------------------------------
-
-    
-    st.markdown(
-        """
-<div class="hero">
-    <div class="hero-kicker">Scientific data quality platform</div>
-    <div class="hero-title">Trust your omics data.<br>Audit before you analyse.</div>
-    <div class="hero-copy">
-        An integrated bioinformatics platform to evaluate
-        expression data integrity, explore unusual sample
-        profiles, benchmark defect detection and screen
-        machine-learning leakage signals.
-    </div>
-    <div class="hero-tag">
-        GSE10072 · LUNG ADENOCARCINOMA EXPRESSION DATA
-    </div>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-    # ----------------------------------------------
-    # DATASET SNAPSHOT
-    # ----------------------------------------------
-
-    section_header(
-        "Dataset snapshot",
-        "Your analysis workspace",
-        "Verified information from the currently loaded GSE10072 dataset.",
-    )
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-        metric_card(
-            "Total samples",
-            f"{total_samples:,}",
-            "Expression profiles",
-        )
-
-    with c2:
-        metric_card(
-            "Probe features",
-            f"{total_features:,}",
-            "Measured features",
-        )
-
-    with c3:
-        metric_card(
-            "Metadata fields",
-            f"{metadata.shape[1]:,}",
-            "Sample annotations",
-        )
-
-    with c4:
-        metric_card(
-            "Missing expression values",
-            f"{missing_values:,}",
-            "In expression matrix",
-        )
-
-    st.write("")
-
-    # ----------------------------------------------
-    # SAMPLE QUALITY INDICATORS
-    # ----------------------------------------------
-
-    section_header(
-        "Metadata quality",
-        "Sample annotation checks",
-        "Basic descriptive checks on the loaded sample metadata.",
-    )
-
-    q1, q2, q3 = st.columns(3)
-
-    with q1:
-        metric_card(
-            "Unique sample IDs",
-            f"{unique_sample_ids:,}/{len(metadata):,}",
-            "Metadata identifier uniqueness",
-        )
-
-    with q2:
-        metric_card(
-            "Tissue labels available",
-            f"{tissue_labelled:,}/{len(metadata):,}",
-            "Samples with tissue annotations",
-        )
-
-    with q3:
-        smoking_labelled = (
-            int(metadata[smoking_column].notna().sum())
-            if smoking_column in metadata.columns
-            else 0
-        )
-
-        metric_card(
-            "Smoking labels available",
-            f"{smoking_labelled:,}/{len(metadata):,}",
-            "Samples with smoking annotations",
-        )
-
-    # ----------------------------------------------
-    # BIOLOGICAL SAMPLE DISTRIBUTION
-    # ----------------------------------------------
-
-    st.write("")
-
-    section_header(
-        "Biological composition",
-        "Understand the sample population",
-        "Explore the tissue categories and smoking-status annotations reported in GEO.",
-    )
-
-    chart_left, chart_right = st.columns(2, gap="large")
-
-    with chart_left:
-        st.markdown("**Tissue type distribution**")
-
-        if not tissue_counts.empty:
-
-            tissue_df = tissue_counts.rename_axis(
-                "Tissue type"
-            ).reset_index(name="Samples")
-
-            tissue_fig = px.pie(
-                tissue_df,
-                names="Tissue type",
-                values="Samples",
-                hole=0.58,
-                color="Tissue type",
-                color_discrete_map={
-                    "Adenocarcinoma of the Lung": "#0b8f87",
-                    "Normal Lung Tissue": "#e5a34b",
-                    "Unknown": "#9aa7b5",
-                },
-            )
-
-            tissue_fig.update_traces(
-                textposition="inside",
-                textinfo="percent+value",
-                marker=dict(
-                    line=dict(color="white", width=3)
-                ),
-                hovertemplate=(
-                    "<b>%{label}</b><br>"
-                    "Samples: %{value}<br>"
-                    "Percentage: %{percent}"
-                    "<extra></extra>"
-                ),
-            )
-
-            tissue_fig.update_layout(
-                height=370,
-                showlegend=True,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                margin=dict(l=10, r=10, t=20, b=10),
-                legend_title_text="Tissue category",
-            )
-
-            st.plotly_chart(
-                tissue_fig,
-                use_container_width=True,
-            )
-
-            st.dataframe(
-                tissue_df,
-                use_container_width=True,
-                hide_index=True,
-            )
-
-        else:
-            st.warning(
-                "Tissue type metadata column was not found."
-            )
-
-    with chart_right:
-        st.markdown("**Smoking-status distribution**")
-
-        if not smoking_counts.empty:
-
-            smoking_df = smoking_counts.rename_axis(
-                "Smoking status"
-            ).reset_index(name="Samples")
-
-            smoking_fig = px.bar(
-                smoking_df,
-                x="Smoking status",
-                y="Samples",
-                color="Smoking status",
-                text="Samples",
-                color_discrete_map={
-                    "Current Smoker": "#0b8f87",
-                    "Former Smoker": "#e5a34b",
-                    "Never Smoked": "#5279a8",
-                    "Unknown": "#9aa7b5",
-                },
-            )
-
-            smoking_fig.update_traces(
-                textposition="outside",
-                marker_line_width=0,
-                hovertemplate=(
-                    "<b>%{x}</b><br>"
-                    "Samples: %{y}"
-                    "<extra></extra>"
-                ),
-            )
-
-            smoking_fig.update_layout(
-                height=370,
-                showlegend=False,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="#fbfcfd",
-                margin=dict(l=10, r=10, t=25, b=10),
-                xaxis_title="Smoking status",
-                yaxis_title="Number of samples",
-                yaxis=dict(
-                    rangemode="tozero",
-                    gridcolor="#e8edf2",
-                ),
-            )
-
-            st.plotly_chart(
-                smoking_fig,
-                use_container_width=True,
-            )
-
-            st.dataframe(
-                smoking_df,
-                use_container_width=True,
-                hide_index=True,
-            )
-
-        else:
-            st.warning(
-                "Smoking-status metadata column was not found."
-            )
-
-    # ----------------------------------------------
-    # PLATFORM MODULES
-    # ----------------------------------------------
-
-    st.write("")
-
-    section_header(
-        "Platform modules",
-        "Five ways to inspect data reliability",
-        "Select a module from the navigation panel to start an analysis.",
-    )
-
-    cards = st.columns(5, gap="medium")
-
-    modules = [
-        (
-            "✓",
-            "Integrity audit",
-            "Check missing values, duplicate IDs, constant features and metadata consistency.",
-            "Integrity Audit",
-        ),
-        (
-            "◉",
-            "Anomaly analysis",
-            "Explore sample variation using PCA and Isolation Forest.",
-            "Anomaly Analysis",
-        ),
-        (
-            "⌁",
-            "Fault benchmark",
-            "Evaluate checks against deliberately injected defects.",
-            "Fault-Injection Benchmark",
-        ),
-        (
-            "⇄",
-            "Leakage screening",
-            "Screen train/test overlap and selected leakage signals.",
-            "ML Leakage Audit",
-        ),
-        (
-            "▤",
-            "Audit history",
-            "Review previous analysis runs and recorded summaries.",
-            "Audit History",
-        ),
-    ]
-
-    for column, (icon, title, description, target_page) in zip(cards, modules):
-        with column:
-            module_card(icon, title, description)
-
-            st.button(
-                f"Open {title} →",
-                key=f"open_{target_page}",
-                use_container_width=True,
-                on_click=lambda target=target_page: st.session_state.update(
-                    page=target
-                ),
-            )
-
-    # ----------------------------------------------
-    # DATA PREVIEW
-    # ----------------------------------------------
-
-    st.write("")
-
-    left, right = st.columns([1.25, 1], gap="large")
-
-    with left:
-        section_header(
-            "Data preview",
-            "Expression matrix",
-            "First eight samples and eight probe features.",
-        )
-
-        st.dataframe(
-            expression.iloc[:8, :8],
-            use_container_width=True,
-            height=285,
-        )
-
-    with right:
-        section_header(
-            "Sample annotations",
-            "Metadata preview",
-            "First eight records from the GEO sample annotations.",
-        )
-
-        st.dataframe(
-            metadata.head(8),
-            use_container_width=True,
-            height=285,
-        )
-
-    # ----------------------------------------------
-    # DATASET INFORMATION
-    # ----------------------------------------------
-
-    st.write("")
-
-    with st.expander("Dataset information and scientific context"):
-
-        st.markdown(
-            """
-            **Dataset accession:** GSE10072
-
-            **Source:** NCBI Gene Expression Omnibus (GEO)
-
-            **Organism:** Homo sapiens
-
-            **Platform:** GPL96 — Affymetrix Human Genome U133A Array
-
-            **Expression features:** 22,283 probes
-
-            **Samples:** 107
-
-            **Tissue categories:** Lung adenocarcinoma and normal lung tissue
-
-            **Expression processing:** Robust Multi-array Average (RMA),
-            as described in the GEO metadata.
-            """
-        )
-
-    # ----------------------------------------------
-    # SCIENTIFIC INTERPRETATION
-    # ----------------------------------------------
-
-    st.markdown(
-        """
-        <div class="info-strip">
-            <strong>Scientific interpretation:</strong>
-            These charts describe the available dataset annotations.
-            They do not establish causal relationships between smoking
-            and cancer. An anomaly flag is a model-generated screening
-            result, not proof of a defective biological sample.
-            Further statistical and biological validation is required.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    render_dashboard_overview(expression, metadata)
 
 # ==================================================
 # INTEGRITY AUDIT
@@ -1064,7 +869,7 @@ elif page == "Integrity Audit":
             """
             <div class="subtle-panel">
                 <div class="section-eyebrow">Input dataset</div>
-                <div style="font-size:1.5rem;font-weight:800;color:#17243a">GSE10072</div>
+                <div style="font-size:1.5rem;font-weight:800;color:#17243a">Active dataset</div>
                 <div style="font-size:.8rem;color:#718096">
                     Sample-by-feature expression matrix
                 </div>
@@ -1092,7 +897,7 @@ elif page == "Integrity Audit":
         save_audit_history(
             "Integrity Audit",
             {
-                "dataset": "GSE10072",
+                "dataset": dataset_label,
                 "total_samples": int(expression.shape[0]),
                 "total_features": int(expression.shape[1]),
                 "passed": counts["PASS"],
@@ -1199,7 +1004,7 @@ elif page == "Anomaly Analysis":
             save_audit_history(
                 "Anomaly Analysis",
                 {
-                    "dataset": "GSE10072",
+                    "dataset": dataset_label,
                     "total_samples": int(total),
                     "potential_anomalies": int(flagged),
                     "typical_profiles": int(total - flagged),
@@ -1341,7 +1146,7 @@ elif page == "Fault-Injection Benchmark":
             save_audit_history(
                 "Fault-Injection Benchmark",
                 {
-                    "dataset": "GSE10072",
+                    "dataset": dataset_label,
                     "total_experiments": int(summary.get("total_experiments", 0)),
                     "injected_defect_experiments": int(
                         summary.get("injected_defect_experiments", 0)

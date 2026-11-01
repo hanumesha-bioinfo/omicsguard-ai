@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: omicsguard
+Version: 0.1.0
+Summary: Bioinformatics dataset integrity and ML reliability auditor
+Requires-Python: >=3.10
